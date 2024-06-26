@@ -23,7 +23,7 @@
       <div class="flex flex-col h-full">
         <div class="border-b flex justify-between h-[55px] items-center">
           <div class="ps-2">
-            <h1 class="text-xl">TeamZones</h1>
+            <h1 class="text-xl">Timezone Comparison</h1>
           </div>
           <!-- Buttons for Export/Import -->
           <div class="flex flex-wrap gap-3 pe-2">
@@ -124,7 +124,16 @@
         <div class="grow overflow-hidden">
           <div class="flex h-main-area-height">
             <div class="w-full">
-              <div class="border-b p-3">search module</div>
+              <div class="border-b p-3">
+                <!-- Search Module -->
+                <input
+                  type="text"
+                  placeholder="Search person..."
+                  class="border p-2 w-full"
+                  x-model="searchQuery"
+                  @input="filterTimezones()"
+                />
+              </div>
               <template x-for="(tz, index) in additionalTimezones" :key="index">
                 <div class="flex">
                   <div
@@ -439,6 +448,7 @@
         return {
           showPersons: true,
           editMode: false,
+          searchQuery: "",
           countries: [],
           selectedCountry: "",
           mainTimezone: "",
@@ -584,6 +594,18 @@
           removePersonFromTimezone(tzIndex, personIndex) {
             this.additionalTimezones[tzIndex].people.splice(personIndex, 1);
             this.saveToLocalStorage();
+          },
+          filterTimezones() {
+            const query = this.searchQuery.toLowerCase();
+            this.additionalTimezones.forEach((tz, index) => {
+              if (index === 0) {
+                tz.visible = true; // Ensure the first timezone is always visible
+              } else {
+                tz.visible = tz.people.some((person) =>
+                  person.name.toLowerCase().includes(query)
+                );
+              }
+            });
           },
           saveToLocalStorage() {
             const data = {
