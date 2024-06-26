@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCSS REM Converter</title>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <!-- <link rel="stylesheet" href="normalize.css" /> -->
+    <link href="src/output.css" rel="stylesheet" />
+  </head>
+
+  <body class="bg-gray-100 min-h-screen flex items-start justify-center p-4">
+    <div
+      class="bg-white p-6 rounded shadow-md w-full"
+      x-data="timezoneApp()"
+      x-init="initializeApp()"
+    >
+      <div class="flex gap-4">
+        <div class="">
+          <template x-for="(tz, index) in additionalTimezones" :key="index">
+            <div x-show="tz.visible" class="flex items-center">
+              <div class="w-[15rem] overflow-hidden">
+                <span class="trim" x-text="tz.label"></span>
+              </div>
+              <div class="flex justify-between text-sm">
+                <template x-for="hour in shiftHours(tz.name)" :key="hour">
+                  <div
+                    class="min-w-[3rem] text-center"
+                    :class="{'bg-black text-white': hour <= 8 || hour >= 18}"
+                  >
+                    <div
+                      :class="{'bg-green-500 text-white': hour === adjustedCurrentHour(tz.name)}"
+                      class="p-3"
+                      x-text="adjustHour(hour)"
+                    ></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="">
+          <h1 class="text-2xl font-bold mb-4">Timezone Comparison</h1>
+
+          <!-- Current Country and Timezone Selector -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700"
+              >Select your country:</label
+            >
+            <select
+              x-model="selectedCountry"
+              @change="updateTimezones"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            >
+              <template x-for="country in countries" :key="country.name">
+                <option
+                  :value="country.name"
+                  x-text="country.name"
+                  :selected="country.name === selectedCountry"
+                ></option>
+              </template>
+            </select>
+          </div>
+          <div class="mb-4" x-show="countryTimezones.length > 1">
+            <label class="block text-sm font-medium text-gray-700"
+              >Select your time zone:</label
+            >
+            <select
+              x-model="mainTimezone"
+              class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+            >
+              <template x-for="timezone in countryTimezones" :key="timezone">
+                <option
+                  :value="timezone"
+                  x-text="timezone"
+                  :selected="timezone === mainTimezone"
+                ></option>
+              </template>
+            </select>
+          </div>
+
+          <!-- Display 24-hour line for the main timezone -->
+          <div class="mb-4">
+            <div class="flex justify-between text-sm hour-grid">
+              <template x-for="hour in 24" :key="hour">
+                <div
+                  :class="{'font-bold': hour === adjustedCurrentHour(mainTimezone)}"
+                  class="hour"
+                  x-text="adjustHour(hour)"
+                ></div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Button to add new timezones -->
+          <button
+            @click="addTimezone"
+            class="mb-4 px-4 py-2 bg-blue-500 text-white rounded shadow"
+          >
+            Add Timezone
+          </button>
+
+          <!-- New Timezones List -->
+          <div>
+            <template x-for="(tz, index) in additionalTimezones" :key="index">
+              <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                  <input
+                    x-model="tz.label"
+                    @input="updateName(index)"
+                    placeholder="Timezone Name"
+                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md mr-2"
+                  />
+                  <select
+                    x-model="tz.country"
+                    @change="updateAdditionalTimezones(index)"
+                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md mr-2"
+                  >
+                    <template x-for="country in countries" :key="country.name">
+                      <option
+                        :value="country.name"
+                        x-text="country.name"
+                        :selected="country.name === tz.country"
+                      ></option>
+                    </template>
+                  </select>
+                  <select
+                    x-show="tz.countryTimezones.length > 1"
+                    x-model="tz.name"
+                    @change="updateAdditionalTimezones(index)"
+                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md mr-2"
+                  >
+                    <template
+                      x-for="timezone in tz.countryTimezones"
+                      :key="timezone"
+                    >
+                      <option
+                        :value="timezone"
+                        x-text="timezone"
+                        :selected="timezone === tz.name"
+                      ></option>
+                    </template>
+                  </select>
+                  <button
+                    @click="removeTimezone(index)"
+                    class="px-2 py-1 bg-red-500 text-white rounded shadow"
+                  >
+                    Remove
+                  </button>
+                  <button
+                    @click="toggleVisibility(index)"
+                    class="px-2 py-1 bg-gray-500 text-white rounded shadow"
+                  >
+                    <span x-text="tz.visible ? 'Hide' : 'Show'"></span>
+                  </button>
+                </div>
+                <div
+                  x-show="tz.visible"
+                  class="flex justify-between text-sm hour-grid"
+                >
+                  <template x-for="hour in shiftHours(tz.name)" :key="hour">
+                    <div
+                      :class="{'bg-green-500': hour === adjustedCurrentHour(tz.name)}"
+                      class="hour"
+                      x-text="adjustHour(hour)"
+                    ></div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- Buttons for Export/Import -->
+          <div class="mt-4">
+            <button
+              @click="exportToJson"
+              class="px-4 py-2 bg-green-500 text-white rounded shadow mr-2"
+            >
+              Export to JSON
+            </button>
+            <input
+              type="file"
+              @change="importFromJson"
+              class="hidden"
+              id="jsonFileInput"
+            />
+            <button
+              @click="document.getElementById('jsonFileInput').click()"
+              class="px-4 py-2 bg-yellow-500 text-white rounded shadow"
+            >
+              Import from JSON
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function timezoneApp() {
+        return {
+          countries: [],
+          selectedCountry: "",
+          mainTimezone: "",
+          additionalTimezones: [],
+          countryTimezones: [],
+          initializeApp() {
+            console.log("Initializing app...");
+            this.loadCountries();
+          },
+          loadCountries() {
+            fetch("countries.json")
+              .then((response) => response.json())
+              .then((data) => {
+                this.countries = data;
+                console.log("Countries loaded:", this.countries);
+                this.loadFromLocalStorage();
+              });
+          },
+          updateTimezones() {
+            const country = this.countries.find(
+              (c) => c.name === this.selectedCountry
+            );
+            if (country) {
+              this.countryTimezones = country.timezones;
+              if (!country.timezones.includes(this.mainTimezone)) {
+                this.mainTimezone = country.timezones[0];
+              }
+              console.log(
+                `Updated timezones for country: ${this.selectedCountry}`,
+                this.countryTimezones
+              );
+            } else {
+              this.countryTimezones = [];
+              this.mainTimezone = "";
+            }
+          },
+          updateAllAdditionalTimezones() {
+            this.additionalTimezones.forEach((tz, index) => {
+              this.updateAdditionalTimezones(index);
+            });
+          },
+          currentHour(timezone) {
+            if (!timezone) return null;
+            const date = new Date().toLocaleString("en-US", {
+              timeZone: timezone,
+            });
+            return new Date(date).getHours();
+          },
+          adjustedCurrentHour(timezone) {
+            const hour = this.currentHour(timezone);
+            return hour === 0 ? 24 : hour;
+          },
+          adjustHour(hour) {
+            return hour === 0 ? 24 : hour;
+          },
+          shiftHours(timezone) {
+            const mainCurrentHour = this.currentHour(this.mainTimezone);
+            const timezoneCurrentHour = this.currentHour(timezone);
+            const offset = (timezoneCurrentHour - mainCurrentHour + 24) % 24;
+            const hours = [];
+            for (let i = 0; i < 24; i++) {
+              hours.push((i + offset) % 24);
+            }
+            return hours;
+          },
+          addTimezone() {
+            const country = this.countries.find(
+              (c) => c.name === this.selectedCountry
+            );
+            this.additionalTimezones.push({
+              label: country ? country.name : "",
+              country: this.selectedCountry,
+              name: this.mainTimezone,
+              countryTimezones: this.countryTimezones,
+              visible: true,
+            });
+            if (this.additionalTimezones.length === 1) {
+              this.mainTimezone = this.additionalTimezones[0].name;
+            }
+            this.saveToLocalStorage();
+            console.log("Added timezone:", this.additionalTimezones);
+          },
+          removeTimezone(index) {
+            this.additionalTimezones.splice(index, 1);
+            if (index === 0 && this.additionalTimezones.length > 0) {
+              this.mainTimezone = this.additionalTimezones[0].name;
+            }
+            this.saveToLocalStorage();
+            console.log("Removed timezone at index:", index);
+          },
+          updateName(index) {
+            this.saveToLocalStorage();
+          },
+          updateAdditionalTimezones(index) {
+            const tz = this.additionalTimezones[index];
+            const country = this.countries.find((c) => c.name === tz.country);
+            if (country) {
+              tz.countryTimezones = country.timezones;
+              if (!country.timezones.includes(tz.name)) {
+                tz.name = country.timezones[0];
+              }
+              console.log(
+                `Updated additional timezone for country: ${tz.country}`,
+                tz
+              );
+            } else {
+              tz.countryTimezones = [];
+              tz.name = "";
+            }
+            this.saveToLocalStorage();
+          },
+          toggleVisibility(index) {
+            this.additionalTimezones[index].visible =
+              !this.additionalTimezones[index].visible;
+            this.saveToLocalStorage();
+          },
+          saveToLocalStorage() {
+            const data = {
+              selectedCountry: this.selectedCountry,
+              mainTimezone: this.mainTimezone,
+              additionalTimezones: this.additionalTimezones,
+            };
+            localStorage.setItem("timezoneAppData", JSON.stringify(data));
+            console.log("Data saved to local storage:", data);
+          },
+          loadFromLocalStorage() {
+            const data = localStorage.getItem("timezoneAppData");
+            if (data) {
+              const parsedData = JSON.parse(data);
+              this.selectedCountry = parsedData.selectedCountry;
+              this.mainTimezone = parsedData.mainTimezone;
+              this.additionalTimezones = parsedData.additionalTimezones.map(
+                (tz) => ({
+                  ...tz,
+                  visible: tz.visible !== undefined ? tz.visible : true,
+                })
+              );
+              console.log("Data loaded from local storage:", parsedData);
+              this.updateTimezones();
+              this.updateAllAdditionalTimezones();
+            }
+          },
+          exportToJson() {
+            const data = {
+              selectedCountry: this.selectedCountry,
+              mainTimezone: this.mainTimezone,
+              additionalTimezones: this.additionalTimezones,
+            };
+            const json = JSON.stringify(data);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "timezoneAppData.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            console.log("Data exported to JSON:", data);
+          },
+          importFromJson(event) {
+            const file = event.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const data = JSON.parse(e.target.result);
+                this.selectedCountry = data.selectedCountry;
+                this.mainTimezone = data.mainTimezone;
+                this.additionalTimezones = data.additionalTimezones.map(
+                  (tz) => ({
+                    ...tz,
+                    visible: tz.visible !== undefined ? tz.visible : true,
+                  })
+                );
+                console.log("Data imported from JSON:", data);
+                this.updateTimezones();
+                this.updateAllAdditionalTimezones();
+                this.saveToLocalStorage();
+              };
+              reader.readAsText(file);
+            }
+          },
+        };
+      }
+    </script>
+  </body>
+</html>

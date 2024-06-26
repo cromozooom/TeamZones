@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+bodyx * {
+  outline: 1px solid red;
+  outline-offset: -1px;
+}

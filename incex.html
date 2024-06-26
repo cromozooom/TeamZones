@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCSS REM Converter</title>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <!-- <link rel="stylesheet" href="normalize.css" /> -->
+    <link href="src/output.css" rel="stylesheet" />
+  </head>
+
+  <body
+    class="min-h-screen flex items-start justify-center h-full overflow-hidden"
+  >
+    <div
+      class="bg-white rounded shadow-md w-full h-full"
+      x-data="timezoneApp()"
+      x-init="initializeApp()"
+    >
+      <div class="flex flex-col h-full">
+        <div class="border-b flex justify-between h-[55px] items-center">
+          <div class="ps-2">
+            <h1 class="text-xl">TeamZones</h1>
+          </div>
+          <!-- Buttons for Export/Import -->
+          <div class="flex flex-wrap gap-3 pe-2">
+            <div class="flex">
+              <button
+                @click="showPersons = !showPersons; saveToLocalStorage();"
+                class="px-4 py-2 bg-green-500 text-white rounded-s shadow"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-people-fill"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"
+                  />
+                </svg>
+              </button>
+              <button
+                @click="editMode = !editMode; saveToLocalStorage();"
+                class="px-4 py-2 bg-green-500 text-white rounded-e shadow"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-pencil-square"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"
+                  />
+                  <path
+                    fill-rule="evenodd"
+                    d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="flex">
+              <button
+                @click="exportToJson"
+                class="px-4 py-2 bg-green-500 text-white rounded-s shadow flex items-center gap-1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-cloud-download"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383"
+                  />
+                  <path
+                    d="M7.646 15.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 14.293V5.5a.5.5 0 0 0-1 0v8.793l-2.146-2.147a.5.5 0 0 0-.708.708z"
+                  />
+                </svg>
+                JSON
+              </button>
+              <input
+                type="file"
+                @change="importFromJson"
+                class="hidden"
+                id="jsonFileInput"
+              />
+              <button
+                @click="document.getElementById('jsonFileInput').click()"
+                class="px-4 py-2 bg-yellow-500 text-white rounded-e shadow flex items-center gap-1"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-cloud-upload"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M4.406 1.342A5.53 5.53 0 0 1 8 0c2.69 0 4.923 2 5.166 4.579C14.758 4.804 16 6.137 16 7.773 16 9.569 14.502 11 12.687 11H10a.5.5 0 0 1 0-1h2.688C13.979 10 15 8.988 15 7.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 2.825 10.328 1 8 1a4.53 4.53 0 0 0-2.941 1.1c-.757.652-1.153 1.438-1.153 2.055v.448l-.445.049C2.064 4.805 1 5.952 1 7.318 1 8.785 2.23 10 3.781 10H6a.5.5 0 0 1 0 1H3.781C1.708 11 0 9.366 0 7.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383"
+                  />
+                  <path
+                    fill-rule="evenodd"
+                    d="M7.646 4.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V14.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708z"
+                  />
+                </svg>
+                from JSON
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="grow overflow-hidden">
+          <div class="flex h-main-area-height">
+            <div class="w-full">
+              <div class="border-b p-3">search module</div>
+              <template x-for="(tz, index) in additionalTimezones" :key="index">
+                <div class="flex">
+                  <div
+                    x-show="tz.visible"
+                    class="flex justify-between text-sm w-full"
+                  >
+                    <div
+                      class="h-full overflow-hidden px-3 py-1 border-b w-full"
+                    >
+                      <template x-if="!showPersons">
+                        <span class="trim" x-text="tz.label"></span>
+                      </template>
+
+                      <template x-if="showPersons">
+                        <div class="flex items-center flex-wrap gap-2">
+                          <template
+                            x-for="(person, personIndex) in tz.people"
+                            :key="person.name"
+                          >
+                            <div class="text-sm px-2 bg-slate-200 rounded">
+                              <span x-text="person.name"></span>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+                    <div class="flex">
+                      <template x-for="hour in shiftHours(tz.name)" :key="hour">
+                        <div
+                          class="text-center border-b p-1 flex items-center justify-center"
+                          :class="{'bg-slate-500 text-white border-b-slate-400': hour <= 8 || hour >= 18}"
+                        >
+                          <div
+                            :class="{'bg-green-500 text-white': hour === adjustedCurrentHour(tz.name)}"
+                            class="min-w-[2rem] rounded-full aspect-square flex items-center justify-center"
+                            x-text="adjustHour(hour)"
+                          ></div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+            <div
+              class="border-l border-l-slate-200 overflow-y-scroll relative min-w-[35rem]"
+            >
+              <div
+                class="border-b px-3 pt-3 pb-2 sticky top-0 bg-white shadow-md"
+              >
+                <!-- Current Country and Timezone Selector -->
+                <div class="">
+                  <label class="block text-sm font-medium text-gray-700"
+                    >Select your country:</label
+                  >
+                  <select
+                    x-model="selectedCountry"
+                    @change="updateTimezones"
+                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  >
+                    <template x-for="country in countries" :key="country.name">
+                      <option
+                        :value="country.name"
+                        x-text="country.name"
+                        :selected="country.name === selectedCountry"
+                      ></option>
+                    </template>
+                  </select>
+                </div>
+                <div class="pt-3" x-show="countryTimezones.length > 1">
+                  <label class="block text-sm font-medium text-gray-700"
+                    >Select your time zone:</label
+                  >
+                  <select
+                    x-model="mainTimezone"
+                    class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                  >
+                    <template
+                      x-for="timezone in countryTimezones"
+                      :key="timezone"
+                    >
+                      <option
+                        :value="timezone"
+                        x-text="timezone"
+                        :selected="timezone === mainTimezone"
+                      ></option>
+                    </template>
+                  </select>
+                </div>
+                <!-- Button to add new timezones -->
+                <button
+                  @click="addTimezone"
+                  class="px-4 mt-2 flex items-center gap-2 py-2 bg-blue-500 text-white rounded shadow"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    class="bi bi-globe2"
+                    viewBox="0 0 16 16"
+                  >
+                    <path
+                      d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m7.5-6.923c-.67.204-1.335.82-1.887 1.855q-.215.403-.395.872c.705.157 1.472.257 2.282.287zM4.249 3.539q.214-.577.481-1.078a7 7 0 0 1 .597-.933A7 7 0 0 0 3.051 3.05q.544.277 1.198.49zM3.509 7.5c.036-1.07.188-2.087.436-3.008a9 9 0 0 1-1.565-.667A6.96 6.96 0 0 0 1.018 7.5zm1.4-2.741a12.3 12.3 0 0 0-.4 2.741H7.5V5.091c-.91-.03-1.783-.145-2.591-.332M8.5 5.09V7.5h2.99a12.3 12.3 0 0 0-.399-2.741c-.808.187-1.681.301-2.591.332zM4.51 8.5c.035.987.176 1.914.399 2.741A13.6 13.6 0 0 1 7.5 10.91V8.5zm3.99 0v2.409c.91.03 1.783.145 2.591.332.223-.827.364-1.754.4-2.741zm-3.282 3.696q.18.469.395.872c.552 1.035 1.218 1.65 1.887 1.855V11.91c-.81.03-1.577.13-2.282.287zm.11 2.276a7 7 0 0 1-.598-.933 9 9 0 0 1-.481-1.079 8.4 8.4 0 0 0-1.198.49 7 7 0 0 0 2.276 1.522zm-1.383-2.964A13.4 13.4 0 0 1 3.508 8.5h-2.49a6.96 6.96 0 0 0 1.362 3.675c.47-.258.995-.482 1.565-.667m6.728 2.964a7 7 0 0 0 2.275-1.521 8.4 8.4 0 0 0-1.197-.49 9 9 0 0 1-.481 1.078 7 7 0 0 1-.597.933M8.5 11.909v3.014c.67-.204 1.335-.82 1.887-1.855q.216-.403.395-.872A12.6 12.6 0 0 0 8.5 11.91zm3.555-.401c.57.185 1.095.409 1.565.667A6.96 6.96 0 0 0 14.982 8.5h-2.49a13.4 13.4 0 0 1-.437 3.008M14.982 7.5a6.96 6.96 0 0 0-1.362-3.675c-.47.258-.995.482-1.565.667.248.92.4 1.938.437 3.008zM11.27 2.461q.266.502.482 1.078a8.4 8.4 0 0 0 1.196-.49 7 7 0 0 0-2.275-1.52c.218.283.418.597.597.932m-.488 1.343a8 8 0 0 0-.395-.872C9.835 1.897 9.17 1.282 8.5 1.077V4.09c.81-.03 1.577-.13 2.282-.287z"
+                    />
+                  </svg>
+                  Add Timezone
+                </button>
+              </div>
+              <div class="">
+                <!-- New Timezones List -->
+                <div class="py-3 flex flex-col gap-3">
+                  <template
+                    x-for="(tz, index) in additionalTimezones"
+                    :key="index"
+                  >
+                    <div class="shadow mx-3 rounded border border-slate-200">
+                      <div class="flex justify-between items-center">
+                        <div class="px-2 flex">
+                          <span class="pe-1" x-text="tz.label + ':'"></span>
+                          <span
+                            class="font-bold"
+                            x-text="tz.currentTime"
+                          ></span>
+                        </div>
+                        <div class="flex items-center">
+                          <button
+                            @click="toggleVisibility(index)"
+                            class="h-full flex items-center px-2 gap-1 text-blue-500"
+                          >
+                            <svg
+                              x-show="tz.visible"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              fill="currentColor"
+                              class="bi bi-eye-fill"
+                              viewBox="0 0 16 16"
+                            >
+                              <path
+                                d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"
+                              />
+                              <path
+                                d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"
+                              />
+                            </svg>
+
+                            <svg
+                              x-show="!tz.visible"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              fill="currentColor"
+                              class="bi bi-eye"
+                              viewBox="0 0 16 16"
+                            >
+                              <path
+                                d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"
+                              />
+                              <path
+                                d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"
+                              />
+                            </svg>
+                            <span x-text="tz.visible ? 'Hide' : 'Show'"></span>
+                          </button>
+                          <button
+                            @click="removeTimezone(index)"
+                            class="h-full flex p-2 text-red-500"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="24"
+                              height="24"
+                              fill="currentColor"
+                              class="bi bi-x"
+                              viewBox="0 0 16 16"
+                            >
+                              <path
+                                d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div
+                        class="flex items-stretch gap-1 justify-between px-2 py-2"
+                      >
+                        <input
+                          x-model="tz.label"
+                          @input="updateName(index)"
+                          placeholder="Timezone Name"
+                          class="block w-full py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        />
+                        <select
+                          x-model="tz.country"
+                          @change="updateAdditionalTimezones(index)"
+                          class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                          <template
+                            x-for="country in countries"
+                            :key="country.name"
+                          >
+                            <option
+                              :value="country.name"
+                              x-text="country.name"
+                              :selected="country.name === tz.country"
+                            ></option>
+                          </template>
+                        </select>
+                        <select
+                          x-show="tz.countryTimezones.length > 1"
+                          x-model="tz.name"
+                          @change="updateAdditionalTimezones(index)"
+                          class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md mr-2"
+                        >
+                          <template
+                            x-for="timezone in tz.countryTimezones"
+                            :key="timezone"
+                          >
+                            <option
+                              :value="timezone"
+                              x-text="timezone"
+                              :selected="timezone === tz.name"
+                            ></option>
+                          </template>
+                        </select>
+                      </div>
+                      <!-- <div
+                          x-show="tz.visible"
+                          class="flex justify-between text-sm hour-grid"
+                        >
+                          <template x-for="hour in shiftHours(tz.name)" :key="hour">
+                            <div
+                              :class="{'bg-green-500': hour === adjustedCurrentHour(tz.name)}"
+                              class="hour"
+                              x-text="adjustHour(hour)"
+                            ></div>
+                          </template>
+                        </div> -->
+                      <div x-show="showPersons" class="p-2 bg-slate-100">
+                        <div class="flex">
+                          <div class="grow">
+                            <input
+                              x-model="tz.newPersonName"
+                              placeholder="Person Name"
+                              class="block w-full text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-s-md border-e-0"
+                            />
+                          </div>
+                          <button
+                            @click="addPersonToTimezone(index)"
+                            class="px-4 py-2 border border-blue-500 text-blue-500 rounded-e shadow"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="20"
+                              height="20"
+                              fill="currentColor"
+                              class="bi bi-person-add"
+                              viewBox="0 0 16 16"
+                            >
+                              <path
+                                d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m.5-5v1h1a.5.5 0 0 1 0 1h-1v1a.5.5 0 0 1-1 0v-1h-1a.5.5 0 0 1 0-1h1v-1a.5.5 0 0 1 1 0m-2-6a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4"
+                              />
+                              <path
+                                d="M8.256 14a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10q.39 0 .74.025c.226-.341.496-.65.804-.918Q8.844 9.002 8 9c-5 0-6 3-6 4s1 1 1 1z"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                        <div class="flex flex-wrap w-full gap-2 pt-2">
+                          <template
+                            x-for="(person, personIndex) in tz.people"
+                            :key="person.name"
+                          >
+                            <div
+                              class="text-sm flex items-center rounded px-2 py-1 bg-white"
+                            >
+                              <span x-text="person.name"></span>
+                              <button
+                                @click="removePersonFromTimezone(index, personIndex)"
+                                class="text-red-500 ml-2"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  fill="currentColor"
+                                  class="bi bi-trash3"
+                                  viewBox="0 0 16 16"
+                                >
+                                  <path
+                                    d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function timezoneApp() {
+        return {
+          showPersons: true,
+          editMode: false,
+          countries: [],
+          selectedCountry: "",
+          mainTimezone: "",
+          additionalTimezones: [],
+          countryTimezones: [],
+          initializeApp() {
+            console.log("Initializing app...");
+            this.loadCountries();
+            setInterval(() => {
+              this.updateCurrentTimes();
+            }, 1000); // Update every second
+          },
+          loadCountries() {
+            fetch("countries.json")
+              .then((response) => response.json())
+              .then((data) => {
+                this.countries = data;
+                console.log("Countries loaded:", this.countries);
+                this.loadFromLocalStorage();
+              });
+          },
+          updateTimezones() {
+            const country = this.countries.find(
+              (c) => c.name === this.selectedCountry
+            );
+            if (country) {
+              this.countryTimezones = country.timezones;
+              if (!country.timezones.includes(this.mainTimezone)) {
+                this.mainTimezone = country.timezones[0];
+              }
+              console.log(
+                `Updated timezones for country: ${this.selectedCountry}`,
+                this.countryTimezones
+              );
+            } else {
+              this.countryTimezones = [];
+              this.mainTimezone = "";
+            }
+          },
+          updateAllAdditionalTimezones() {
+            this.additionalTimezones.forEach((tz, index) => {
+              this.updateAdditionalTimezones(index);
+            });
+          },
+          currentTimeString(timezone) {
+            if (!timezone) return null;
+            const date = new Date().toLocaleString("en-US", {
+              timeZone: timezone,
+            });
+            return new Date(date).toLocaleTimeString("en-US", {
+              hour12: false,
+            });
+          },
+          currentHour(timezone) {
+            if (!timezone) return null;
+            const date = new Date().toLocaleString("en-US", {
+              timeZone: timezone,
+            });
+            const hour = new Date(date).getHours();
+            return hour === 0 ? 24 : hour;
+          },
+          adjustedCurrentHour(timezone) {
+            return this.currentHour(timezone);
+          },
+          adjustHour(hour) {
+            return hour === 0 ? 24 : hour;
+          },
+          shiftHours(timezone) {
+            const currentHour = this.currentHour(timezone);
+            const hours = [];
+            for (let i = -11; i <= 12; i++) {
+              let adjustedHour = (currentHour + i + 24) % 24;
+              adjustedHour = adjustedHour === 0 ? 24 : adjustedHour;
+              hours.push(adjustedHour);
+            }
+            return hours;
+          },
+          addTimezone() {
+            const country = this.countries.find(
+              (c) => c.name === this.selectedCountry
+            );
+            const newTimezone = {
+              label: country ? country.name : "",
+              country: this.selectedCountry,
+              name: this.mainTimezone,
+              countryTimezones: this.countryTimezones,
+              people: [],
+              newPersonName: "",
+              visible: true,
+              currentTime: this.currentTimeString(this.mainTimezone),
+            };
+            this.additionalTimezones.push(newTimezone);
+            if (this.additionalTimezones.length === 1) {
+              this.mainTimezone = newTimezone.name;
+            }
+            this.saveToLocalStorage();
+            console.log("Added timezone:", this.additionalTimezones);
+          },
+          removeTimezone(index) {
+            this.additionalTimezones.splice(index, 1);
+            if (index === 0 && this.additionalTimezones.length > 0) {
+              this.mainTimezone = this.additionalTimezones[0].name;
+            }
+            this.saveToLocalStorage();
+            console.log("Removed timezone at index:", index);
+          },
+          updateName(index) {
+            this.saveToLocalStorage();
+          },
+          updateAdditionalTimezones(index) {
+            const tz = this.additionalTimezones[index];
+            const country = this.countries.find((c) => c.name === tz.country);
+            if (country) {
+              tz.countryTimezones = country.timezones;
+              if (!country.timezones.includes(tz.name)) {
+                tz.name = country.timezones[0];
+              }
+              console.log(
+                `Updated additional timezone for country: ${tz.country}`,
+                tz
+              );
+            } else {
+              tz.countryTimezones = [];
+              tz.name = "";
+            }
+            this.saveToLocalStorage();
+          },
+          toggleVisibility(index) {
+            this.additionalTimezones[index].visible =
+              !this.additionalTimezones[index].visible;
+            this.saveToLocalStorage();
+          },
+          addPersonToTimezone(index) {
+            const tz = this.additionalTimezones[index];
+            if (tz.newPersonName.trim() !== "") {
+              tz.people.push({
+                name: tz.newPersonName,
+              });
+              tz.newPersonName = "";
+              this.saveToLocalStorage();
+            }
+          },
+          removePersonFromTimezone(tzIndex, personIndex) {
+            this.additionalTimezones[tzIndex].people.splice(personIndex, 1);
+            this.saveToLocalStorage();
+          },
+          saveToLocalStorage() {
+            const data = {
+              showPersons: this.showPersons,
+              editMode: this.editMode,
+              selectedCountry: this.selectedCountry,
+              mainTimezone: this.mainTimezone,
+              additionalTimezones: this.additionalTimezones,
+            };
+            localStorage.setItem("timezoneAppData", JSON.stringify(data));
+            console.log("Data saved to local storage:", data);
+          },
+          loadFromLocalStorage() {
+            const data = localStorage.getItem("timezoneAppData");
+            if (data) {
+              const parsedData = JSON.parse(data);
+              this.showPersons = parsedData.showPersons;
+              this.editMode = parsedData.editMode;
+              this.selectedCountry = parsedData.selectedCountry;
+              this.mainTimezone = parsedData.mainTimezone;
+              this.additionalTimezones = parsedData.additionalTimezones.map(
+                (tz) => ({
+                  ...tz,
+                  visible: tz.visible !== undefined ? tz.visible : true,
+                  currentTime: this.currentTimeString(tz.name),
+                })
+              );
+              console.log("Data loaded from local storage:", parsedData);
+              this.updateTimezones();
+              this.updateAllAdditionalTimezones();
+            }
+          },
+          updateCurrentTimes() {
+            this.additionalTimezones.forEach((tz) => {
+              tz.currentTime = this.currentTimeString(tz.name);
+            });
+          },
+          exportToJson() {
+            const data = {
+              showPersons: this.showPersons,
+              editMode: this.editMode,
+              selectedCountry: this.selectedCountry,
+              mainTimezone: this.mainTimezone,
+              additionalTimezones: this.additionalTimezones,
+            };
+            const json = JSON.stringify(data);
+            const blob = new Blob([json], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "timezoneAppData.json";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            console.log("Data exported to JSON:", data);
+          },
+          importFromJson(event) {
+            const file = event.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const data = JSON.parse(e.target.result);
+                this.showPersons = data.showPersons;
+                this.editMode = data.editMode;
+                this.selectedCountry = data.selectedCountry;
+                this.mainTimezone = data.mainTimezone;
+                this.additionalTimezones = data.additionalTimezones.map(
+                  (tz) => ({
+                    ...tz,
+                    visible: tz.visible !== undefined ? tz.visible : true,
+                    currentTime: this.currentTimeString(tz.name),
+                  })
+                );
+                console.log("Data imported from JSON:", data);
+                this.updateTimezones();
+                this.updateAllAdditionalTimezones();
+                this.saveToLocalStorage();
+              };
+              reader.readAsText(file);
+            }
+          },
+        };
+      }
+    </script>
+  </body>
+</html>
